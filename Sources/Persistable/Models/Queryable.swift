@@ -6,7 +6,7 @@
 
 import Foundation
 
-public protocol Queryable: Persistable {
+public protocol Queryable: Persistable where Manager: QueryableObjectManager {
     associatedtype QueryType
     static func urls(for query: QueryType) throws -> [URL]
 }

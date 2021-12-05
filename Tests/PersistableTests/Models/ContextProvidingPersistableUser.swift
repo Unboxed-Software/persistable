@@ -17,9 +17,11 @@ struct ContextProvidingPersistableUser: Codable, Equatable {
     static let test = ContextProvidingPersistableUser(id: "12345", email: "test@test.com", firstName: "Tester", lastName: "McTestson")
 }
 
+fileprivate let objectManager = BaseObjectManager<ContextProvidingPersistableUser>()
+
 extension ContextProvidingPersistableUser: ContextProvidingPersistable {
-    static var manager: ObjectManager {
-        BaseObjectManager.default
+    static var manager: BaseObjectManager<ContextProvidingPersistableUser> {
+        objectManager
     }
     
     static var placeholder: ContextProvidingPersistableUser { .test }

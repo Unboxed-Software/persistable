@@ -29,11 +29,13 @@ struct QueryTest: Codable, Equatable, Comparable {
     ]
 }
 
+fileprivate let objectManager = BaseObjectManager<QueryTest>()
+
 extension QueryTest: ContextProvidingPersistable {
     var context: Int { id }
     
-    static var manager: ObjectManager {
-        BaseObjectManager.default
+    static var manager: BaseObjectManager<QueryTest> {
+        objectManager
     }
     
     static var placeholder: QueryTest {

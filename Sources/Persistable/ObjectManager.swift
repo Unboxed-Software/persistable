@@ -8,43 +8,45 @@
 import Foundation
 import Combine
 
-public protocol ObjectManager: BaseObjectManager {
-    func save<T: Persistable>(_ object: T, to context: T.LookupContext) throws
+public protocol PersistedObjectManager: AnyObject {
+    associatedtype Object: Persistable
     
-    func load<T: Persistable>(from context: T.LookupContext) throws -> T
+    func save(_ object: Object, to context: Object.LookupContext) throws
     
-    func observe<T: Persistable>(at context: T.LookupContext) throws -> AnyPublisher<T, Never>
+    func load(from context: Object.LookupContext) throws -> Object
     
-    func load<T: Queryable>(with query: T.QueryType) throws -> [T]
-    
-    static var `default`: ObjectManager { get }
+    func observe(at context: Object.LookupContext) throws -> AnyPublisher<Object, Never>
     
     var baseURL: URL { get }
 }
 
-public extension ObjectManager {
-    func save<T: ContextProvidingPersistable>(_ object: T) throws {
+public protocol QueryableObjectManager: PersistedObjectManager where Object: Queryable {
+    func load(with query: Object.QueryType) throws -> [Object]
+}
+
+public extension PersistedObjectManager {
+    func save(_ object: Object) throws where Object: ContextProvidingPersistable {
         try save(object, to: object.context)
     }
     
-    func save<T: Persistable>(_ object: T, to context: T.LookupContext) throws {
+    func save(_ object: Object, to context: Object.LookupContext) throws {
         let data = try JSONEncoder().encode(object)
-        let url = try T.url(for: context)
+        let url = try Object.url(for: context)
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: url)
     }
     
-    func load<T: Persistable>(from context: T.LookupContext) throws -> T {
-        let url = try T.url(for: context)
+    func load(from context: Object.LookupContext) throws -> Object {
+        let url = try Object.url(for: context)
         let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(T.self, from: data)
+        return try JSONDecoder().decode(Object.self, from: data)
     }
     
-    func load<T: Persistable>(from context: T.LookupContext, callback: @escaping (Result<T, Error>) -> Void) {
+    func load(from context: Object.LookupContext, callback: @escaping (Result<Object, Error>) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
             do {
-                let value: T = try self.load(from: context)
+                let value: Object = try self.load(from: context)
                 DispatchQueue.main.async {
                     callback(.success(value))
                 }
@@ -55,21 +57,22 @@ public extension ObjectManager {
             }
         }
     }
-    
-    func load<T: Queryable>(with query: T.QueryType) throws -> [T] {
-        let urls = try T.urls(for: query)
-        let data = try urls.map { try Data(contentsOf: $0) }
-        let decoder = JSONDecoder()
-        return try data.compactMap { try decoder.decode(T.self, from: $0) }
-    }
-    
-    
 }
 
-open class BaseObjectManager: ObjectManager {
-    public static let `default`: ObjectManager = BaseObjectManager()
+public extension QueryableObjectManager {
+    func load(with query: Object.QueryType) throws -> [Object] {
+        let urls = try Object.urls(for: query)
+        let data = try urls.map { try Data(contentsOf: $0) }
+        let decoder = JSONDecoder()
+        return try data.compactMap { try decoder.decode(Object.self, from: $0) }
+    }
+}
+
+open class BaseObjectManager<T: Persistable>: PersistedObjectManager {
     
-    public func observe<T>(at context: T.LookupContext) throws -> AnyPublisher<T, Never> where T : Persistable {
+    public init() { }
+    
+    public func observe(at context: T.LookupContext) throws -> AnyPublisher<T, Never> where T : Persistable {
         fatalError()
     }
     
@@ -81,12 +84,6 @@ open class BaseObjectManager: ObjectManager {
             create: true
         ).appendingPathComponent("db")
     }
-    
-    
 }
 
-// Persistable should have (with empty default implementation):
-// func beforeSave()
-// func afterSave()
-// func beforeLoad()
-// func afterLoad()
+extension BaseObjectManager: QueryableObjectManager where T: Queryable { }

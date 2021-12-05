@@ -8,8 +8,9 @@ import Foundation
 
 public protocol Persistable: Codable {
     associatedtype LookupContext: PersistableContextType
+    associatedtype Manager: PersistedObjectManager where Manager.Object == Self
     
-    static var manager: ObjectManager { get }
+    static var manager: Manager { get }
     static var baseDirectory: URL { get }
     static func url(for context: LookupContext) throws -> URL
     

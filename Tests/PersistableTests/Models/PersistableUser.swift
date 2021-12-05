@@ -17,9 +17,11 @@ struct PersistableUser: Codable, Equatable {
     static let test = PersistableUser(id: "12345", email: "test@test.com", firstName: "Tester", lastName: "McTestson")
 }
 
+fileprivate let objectManager = BaseObjectManager<PersistableUser>()
+
 extension PersistableUser: Persistable {
-    static var manager: ObjectManager {
-        BaseObjectManager.default
+    static var manager: BaseObjectManager<PersistableUser> {
+        objectManager
     }
     
     static func load(from url: URL) throws -> PersistableUser {

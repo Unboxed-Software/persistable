@@ -17,13 +17,15 @@ struct SingletonPersistableUser: Codable, Equatable {
     static let test = SingletonPersistableUser(id: "12345", email: "test@test.com", firstName: "Tester", lastName: "McTestson")
 }
 
+fileprivate let objectManager = BaseObjectManager<SingletonPersistableUser>()
+
 extension SingletonPersistableUser: SingletonPersistable {
-    var manager: ObjectManager {
-        BaseObjectManager.default
+    var manager: BaseObjectManager<SingletonPersistableUser> {
+        objectManager
     }
     
-    static var manager: ObjectManager {
-        BaseObjectManager.default
+    static var manager: BaseObjectManager<SingletonPersistableUser> {
+        objectManager
     }
     
     static var placeholder: SingletonPersistableUser { .test }
