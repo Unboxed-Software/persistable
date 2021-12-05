@@ -17,3 +17,9 @@ public extension PersistableContextType {
         self.init(fileName: fileName)
     }
 }
+
+public extension URL {
+    var fileName: String {
+        self.deletingPathExtension().lastPathComponent
+    }
+}

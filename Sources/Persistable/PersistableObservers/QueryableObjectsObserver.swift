@@ -37,7 +37,7 @@ open class QueryableObjectsObserver<T: Queryable>: ObservableObject {
     private var isFirstLoad = true
     
     @Published
-    public var state: State
+    public var state: State = .placeholder
     
     @Published
     public var loading: Bool = false
@@ -50,15 +50,7 @@ open class QueryableObjectsObserver<T: Queryable>: ObservableObject {
         case unmodified
     }
     
-    public init(_ value: [T]? = nil, for query: T.QueryType? = nil) {
-        if let value = value {
-            self.value = value
-            state = .unmodified
-        } else {
-            self.value = [T.placeholder]
-            state = .placeholder
-        }
-        
+    public init(for query: T.QueryType? = nil) {
         self.query = query
         
         let folderMonitor: FolderMonitor
@@ -67,7 +59,7 @@ open class QueryableObjectsObserver<T: Queryable>: ObservableObject {
             folderMonitor = monitor
         } else {
             folderMonitor = FolderMonitor(url: T.baseDirectory)
-            weakStore[T.baseURL] = WeakAnyObject(value: folderMonitor)
+            weakStore[T.baseDirectory] = WeakAnyObject(value: folderMonitor)
         }
         
         self.folderMonitor = folderMonitor
@@ -78,14 +70,15 @@ open class QueryableObjectsObserver<T: Queryable>: ObservableObject {
     }
     
     public func load() {
+        loading = true
         if isFirstLoad {
             firstLoad()
         }
         
-        if let query = query  {
+        if let query = query {
             do {
-                value = try T.load(with: query)
                 state = .unmodified
+                value = try T.load(with: query)
             } catch {
                 value = [T.placeholder]
                 state = .placeholder
@@ -94,6 +87,8 @@ open class QueryableObjectsObserver<T: Queryable>: ObservableObject {
             value = [T.placeholder]
             state = .placeholder
         }
+        
+        loading = false
     }
 
     open func firstLoad() {

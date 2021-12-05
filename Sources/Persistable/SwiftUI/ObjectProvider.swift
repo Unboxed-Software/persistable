@@ -14,7 +14,7 @@ public struct ObjectProvider<Content: View, T: Persistable>: View {
     @StateObject
     public var value = PersistedObjectObserver<T>()
     
-    public init(_ type: T.Type, context: T.LookupContext, @ViewBuilder content: @escaping (T) -> Content ) {
+    public init(context: T.LookupContext, @ViewBuilder content: @escaping (T) -> Content ) {
         self.context = context
         self.content = content
     }
@@ -22,9 +22,6 @@ public struct ObjectProvider<Content: View, T: Persistable>: View {
     public var body: some View {
         content(value.value).onAppear {
             self.firstLoad()
-        }
-        .onChange(of: context) { context in
-            self.value.context = context
         }
         .if(value.state == .placeholder) { view in
             view.redacted(reason: .placeholder)

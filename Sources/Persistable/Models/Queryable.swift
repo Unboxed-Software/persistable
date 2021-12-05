@@ -9,15 +9,14 @@ import Foundation
 public protocol Queryable: Persistable {
     associatedtype QueryType
     static func urls(for query: QueryType) throws -> [URL]
-    
-    static func load(with query: QueryType) throws -> [Self]
 }
 
 public extension Queryable {
+    static func allUrls() throws -> [URL] {
+        return try FileManager.default.contentsOfDirectory(at: Self.baseDirectory, includingPropertiesForKeys: nil, options: [])
+    }
+    
     static func load(with query: QueryType) throws -> [Self] {
-        let urls = try Self.urls(for: query)
-        let data = try urls.map { try Data(contentsOf: $0) }
-        let decoder = JSONDecoder()
-        return try data.compactMap { try decoder.decode(Self.self, from: $0) }
+        try manager.load(with: query)
     }
 }
