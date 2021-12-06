@@ -40,7 +40,7 @@ public protocol ContextProvidingPersistable: Persistable {
     var context: LookupContext { get }
 }
 
-extension ContextProvidingPersistable {
+public extension ContextProvidingPersistable {
     func save() throws {
         try Self.manager.save(self, to: context)
     }
